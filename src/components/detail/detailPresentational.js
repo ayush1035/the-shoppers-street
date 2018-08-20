@@ -7,10 +7,13 @@ import "react-responsive-carousel/lib/styles/carousel.min.css"
 export class Detail extends React.Component {
     constructor(props) {
         super(props);
+        this.colorId = 0;
+        this.storageId = 0;
         this.selectedColorId = 0;
         this.selectedStorageId = 0;
         this.handleColorClick = this.handleColorClick.bind(this);
         this.handleStorageClick = this.handleStorageClick.bind(this);
+        this.state = { currObj: {} };
     }
 
     componentDidMount() {
@@ -24,7 +27,9 @@ export class Detail extends React.Component {
                 obj = this.props.productDetail.product_variations[i];
             }
         }
-        this.props.getProductDetail(obj._id);
+        this.setState({
+            currObj:obj
+        });
     }
 
     handleColorClick(event) {
@@ -35,28 +40,41 @@ export class Detail extends React.Component {
                 obj = this.props.productDetail.product_variations[i];
             }
         }
-        this.props.getProductDetail(obj._id);
+        this.setState({
+            currObj:obj
+        });
+    }
+
+    componentWillReceiveProps(props) {
+        if(props.productDetail.success)
+        {
+            debugger;
+            this.setState({
+                currObj: props.productDetail.currObj
+            })
+             this.colorId = props.productDetail.attributes[1]._id;
+            this.storageId = props.productDetail.attributes[0]._id;
+            for (let i = 0; i < props.productDetail.options.length; i++) {
+                let attrib_id = props.productDetail.options[i].attrib_id;
+                if (attrib_id == this.colorId) {
+                    if (props.productDetail.options[i]._id == props.productDetail.selected_option_ids[0] || props.productDetail.options[i]._id == props.productDetail.selected_option_ids[1]) {
+                        this.selectedColorId = props.productDetail.options[i]._id
+                    }
+                }
+                if (attrib_id == this.storageId ) {
+                    if (props.productDetail.options[i]._id == props.productDetail.selected_option_ids[0] || props.productDetail.options[i]._id == props.productDetail.selected_option_ids[1]) {
+                        this.selectedStorageId = props.productDetail.options[i]._id
+                    }
+                }
+            }
+        }
+        
     }
 
     render() {
         if (this.props.loader == false) {
-           
-            if (this.props.productDetail.success) {
-                let colorId = this.props.productDetail.attributes[1]._id;
-                let storageId = this.props.productDetail.attributes[0]._id;
-                for (let i = 0; i < this.props.productDetail.options.length; i++) {
-                    let attrib_id = this.props.productDetail.options[i].attrib_id;
-                    if (attrib_id == colorId) {
-                        if (this.props.productDetail.options[i]._id == this.props.productDetail.selected_option_ids[0] || this.props.productDetail.options[i]._id == this.props.productDetail.selected_option_ids[1]) {
-                            this.selectedColorId = this.props.productDetail.options[i]._id
-                        }
-                    }
-                    if (attrib_id == storageId) {
-                        if (this.props.productDetail.options[i]._id == this.props.productDetail.selected_option_ids[0] || this.props.productDetail.options[i]._id == this.props.productDetail.selected_option_ids[1]) {
-                            this.selectedStorageId = this.props.productDetail.options[i]._id
-                        }
-                    }
-                }
+            if (this.props.productDetail.success&&this.state.currObj.name) {
+                
                 return (
                     <div className="container">
                         <div className="row  leftDetail">
@@ -64,7 +82,7 @@ export class Detail extends React.Component {
                                 <div className="row">
                                     <div className="col-md-12">
                                         <Carousel>
-                                            {this.props.productDetail.currObj.images.map((image) => (
+                                            {this.state.currObj.images.map((image) => (
                                                 <div>
                                                     <img src={image} />
 
@@ -72,12 +90,12 @@ export class Detail extends React.Component {
                                             ))}
                                         </Carousel>
                                     </div>
-                                </div>           
+                                </div>
                             </div>
                             <div className="col-md-6">
                                 <div className="row">
                                     <div className="col-md-12">
-                                        <h2 className="productName">{this.props.productDetail.currObj.name}</h2>
+                                        <h2 className="productName">{this.state.currObj.name}</h2>
                                         <span className=" btn-sm btn-success">In stock</span>
                                         <hr />
                                     </div>
@@ -90,17 +108,17 @@ export class Detail extends React.Component {
                                         <hr />
                                     </div>
                                     <div className="col-md-12">
-                                        <FaRupeeSign className="salePrice" /><span className="salePriceSpan" >{this.props.productDetail.currObj.sale_price} <span className="markPrice1">inclusive of all taxes</span></span>
+                                        <FaRupeeSign className="salePrice" /><span className="salePriceSpan" >{this.state.currObj.sale_price} <span className="markPrice1">inclusive of all taxes</span></span>
                                         <br />
-                                        <span className="markPrice"><FaRupeeSign /><strike>{this.props.productDetail.currObj.mark_price}</strike></span>
+                                        <span className="markPrice"><FaRupeeSign /><strike>{this.state.currObj.mark_price}</strike></span>
                                         <br />
-                                        <div className="discount">You get exclusive {this.props.productDetail.currObj.sale_msg}</div>
+                                        <div className="discount">You get exclusive {this.state.currObj.sale_msg}</div>
                                         <hr />
                                     </div>
                                     <div className="col-md-12">
                                         <h5 className="colorVary">Color Variants</h5>
                                         {this.props.productDetail.options.map((option) => {
-                                            if (option.attrib_id == colorId) {
+                                            if (option.attrib_id == this.colorId) {
                                                 if (option._id == this.selectedColorId) {
                                                     return (<span className="btn selectedColorSpan" >{option.name}</span>)
                                                 }
@@ -114,7 +132,7 @@ export class Detail extends React.Component {
                                     <div className="col-md-12">
                                         <h5 className="colorVary">Size Variants</h5>
                                         {this.props.productDetail.options.map((option) => {
-                                            if (option.attrib_id == storageId) {
+                                            if (option.attrib_id == this.storageId) {
                                                 if (option._id == this.selectedStorageId) {
                                                     return (<span className="btn selectedStorageSpan">{option.name}</span>)
                                                 }
@@ -122,15 +140,15 @@ export class Detail extends React.Component {
                                                     return (<span className="btn storageSpan" storageId={option._id} onClick={this.handleStorageClick}>{option.name}</span>)
                                             }
                                         })}
-                                        <hr/>
+                                        <hr />
                                     </div>
-                                    
+
                                     <div className="col-md-12">
-                                            <button className="btn btn-primary cartButton">
-                                                ADD TO CART
+                                        <button className="btn btn-primary cartButton">
+                                            ADD TO CART
                                             </button>
                                     </div>
-                                   
+
                                 </div>
                             </div>
                         </div>
